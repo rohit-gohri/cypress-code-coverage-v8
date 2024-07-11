@@ -75,9 +75,9 @@ const registerHooks = () => {
       })
     }
 
-    const ssr = Cypress._.get(codeCoverageConfig, 'ssr')
+    const ssrCoveragePath = Cypress._.get(codeCoverageConfig, 'ssr')
 
-    if (!ssr) {
+    if (!ssrCoveragePath) {
       return
     }
     logMessage('Saving hosts for SSR coverage')
@@ -89,7 +89,7 @@ const registerHooks = () => {
       if (!win?.location?.host) {
         return
       }
-      const url = `${win.location.protocol}//${win.location.host}${ssr}`
+      const url = `${win.location.protocol}//${win.location.host}${ssrCoveragePath}`
       const existingHost = Cypress._.find(hostObjects, {
         url
       })
@@ -111,16 +111,10 @@ const registerHooks = () => {
   })
 
   afterEach(function collectClientCoverage() {
-    const hostToProjectMap = Cypress._.get(
-      codeCoverageConfig,
-      'hostToProjectMap'
-    )
     // collect and merge frontend coverage
     cy.task(
       'takePreciseCoverage',
-      {
-        hostToProjectMap
-      },
+      {},
       {
         timeout: dayjs.duration(30, 'seconds').asMilliseconds(),
         log: false

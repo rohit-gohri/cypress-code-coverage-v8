@@ -91,11 +91,10 @@ const cwd = process.cwd()
 
 /**
  * @param {string} url
- * @param {Record<string, string>} hostToProjectMap
  * @param {Record<string, {filePath: string, sources: SourceMap}>} sourceMapCache
  * @returns
  */
-async function getSources(url, hostToProjectMap, sourceMapCache = {}) {
+async function getSources(url, sourceMapCache = {}) {
   if (sourceMapCache[url]) {
     return sourceMapCache[url]
   }
@@ -119,12 +118,6 @@ async function getSources(url, hostToProjectMap, sourceMapCache = {}) {
   } else if (/^https?:/.test(url)) {
     code = await (await fetch(url)).text()
     const parsedUrl = new URL(url)
-
-    projectDir =
-      hostToProjectMap?.[parsedUrl.hostname] ??
-      hostToProjectMap?.[parsedUrl.host] ??
-      hostToProjectMap?.[parsedUrl.origin] ??
-      projectDir
 
     filePath = path.resolve(
       path.join(cacheDir, parsedUrl.hostname, parsedUrl.pathname)

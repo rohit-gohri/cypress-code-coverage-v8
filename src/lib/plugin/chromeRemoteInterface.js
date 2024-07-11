@@ -70,7 +70,7 @@ async function startPreciseCoverage() {
   })
 }
 
-function takePreciseCoverage({ hostToProjectMap = {} } = {}) {
+function takePreciseCoverage() {
   if (!client) {
     debug('no chrome client')
     return null
@@ -78,7 +78,7 @@ function takePreciseCoverage({ hostToProjectMap = {} } = {}) {
 
   return client.Profiler.takePreciseCoverage()
     .then(async (cov) => {
-      const res = await convertProfileCoverageToIstanbul(cov, hostToProjectMap)
+      const res = await convertProfileCoverageToIstanbul(cov)
       debug('chrome coverage', cov, res)
       return res
     })

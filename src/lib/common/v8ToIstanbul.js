@@ -7,8 +7,8 @@ const { debug, exists, cacheDir } = require('./common-utils')
 /**
  * @param {import('devtools-protocol').Protocol.Profiler.TakePreciseCoverageResponse['result'][number]} obj
  */
-async function convertToIstanbul(obj, hostToProjectMap, sourceMapCache = {}) {
-  let res = await getSources(obj.url, hostToProjectMap, sourceMapCache)
+async function convertToIstanbul(obj, sourceMapCache = {}) {
+  let res = await getSources(obj.url, sourceMapCache)
   if (!res) {
     return null
   }
@@ -34,9 +34,8 @@ async function convertToIstanbul(obj, hostToProjectMap, sourceMapCache = {}) {
  * @see https://github.com/bcoe/c8/issues/376
  * @see https://github.com/tapjs/processinfo/blob/33c72e547139630cde35a4126bb4575ad7157065/lib/register-coverage.cjs
  * @param {Omit<import('devtools-protocol').Protocol.Profiler.TakePreciseCoverageResponse, 'timestamp'>} cov
- * @param {Record<string, string>} hostToProjectMap
  */
-async function convertProfileCoverageToIstanbul(cov, hostToProjectMap = {}) {
+async function convertProfileCoverageToIstanbul(cov) {
   // @ts-ignore
   const sourceMapCache = (cov['source-map-cache'] = {})
 
@@ -56,12 +55,10 @@ async function convertProfileCoverageToIstanbul(cov, hostToProjectMap = {}) {
       ) {
         return null
       }
-      return convertToIstanbul(obj, hostToProjectMap, sourceMapCache).catch(
-        (err) => {
-          console.error(err, `could not convert to istanbul - ${obj.url}`)
-          return null
-        }
-      )
+      return convertToIstanbul(obj, sourceMapCache).catch((err) => {
+        console.error(err, `could not convert to istanbul - ${obj.url}`)
+        return null
+      })
     })
   )
 
