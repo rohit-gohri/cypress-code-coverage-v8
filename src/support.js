@@ -49,7 +49,7 @@ const registerHooks = () => {
   const clientCoverageEnabled =
     String(Cypress._.get(codeCoverageConfig, 'client', false)) !== 'false'
   /**
-   * @type {{url: string}[]}
+   * @type {{url: string, comment: string}[]}
    */
   let hostObjects = []
 
@@ -99,7 +99,8 @@ const registerHooks = () => {
 
       logMessage(`Saved "${url}" for SSR coverage`)
       hostObjects.push({
-        url
+        url,
+        comment: `ssr - ${win.location.host}`
       })
     }
 
@@ -164,24 +165,21 @@ const registerHooks = () => {
       // we can only request server-side code coverage
       // if we are running end-to-end tests,
       // otherwise where do we send the request?
-      // TODO: Support array of urls
-      const backend = Cypress._.get(codeCoverageConfig, 'url')
+      const backendUrls = Cypress._.castArray(
+        Cypress._.get(codeCoverageConfig, 'urls', [])
+      )
 
       /**
        * @type {{comment: string, url: string}[]}
        */
       const finalUrls = [
-        ...(backend
-          ? [
-              {
-                comment: 'backend',
-                url: backend
-              }
-            ]
+        ...(backendUrls.length
+          ? backendUrls.map((url) => ({
+              url,
+              comment: `backend - ${url}`
+            }))
           : []),
-        ...hostObjects.map(({ url }) => {
-          return { comment: 'ssr', url }
-        })
+        ...hostObjects
       ].filter(Boolean)
 
       await Cypress.Promise.mapSeries(finalUrls, ({ url, comment }) => {
