@@ -1,4 +1,19 @@
-// @ts-check
+const fs = require('fs/promises')
+const path = require('path')
+const debug = require('debug')('code-coverage')
+
+const cacheDir = path.join(__dirname, '..', '..', '..', '.cache')
+
+/**
+ * @param {string} filename
+ */
+function exists(filename) {
+  return fs
+    .access(filename, fs.constants.F_OK)
+    .then(() => true)
+    .catch(() => false)
+}
+
 function stringToArray(prop, obj) {
   if (typeof obj[prop] === 'string') {
     obj[prop] = [obj[prop]]
@@ -44,9 +59,11 @@ const fileCoveragePlaceholder = (fullPath) => {
   }
 }
 
+const keys = ['statementMap', 'fnMap', 'branchMap', 's', 'f', 'b']
 const isPlaceholder = (entry) => {
-  // when the file has been instrumented, its entry has "hash" property
-  return !('hash' in entry)
+  return keys.every((key) => {
+    return !(key in entry) || Object.keys(entry[key]).length === 0
+  })
 }
 
 /**
@@ -62,6 +79,9 @@ const removePlaceholders = (coverage) => {
 }
 
 module.exports = {
+  debug,
+  cacheDir,
+  exists,
   combineNycOptions,
   defaultNycOptions,
   fileCoveragePlaceholder,

@@ -1,4 +1,3 @@
-// @ts-check
 const istanbul = require('istanbul-lib-coverage')
 const { join, resolve } = require('path')
 const { existsSync, mkdirSync, readFileSync, writeFileSync } = require('fs')
@@ -11,10 +10,13 @@ const {
   readNycOptions,
   includeAllFiles
 } = require('./task-utils')
-const { fixSourcePaths } = require('./support-utils')
-const { removePlaceholders } = require('./common-utils')
-
-const debug = require('debug')('code-coverage')
+const { fixSourcePaths } = require('../support/support-utils')
+const { debug, removePlaceholders } = require('../common/common-utils')
+const {
+  startPreciseCoverage,
+  takePreciseCoverage,
+  stopPreciseCoverage
+} = require('./chromeRemoteInterface')
 
 // these are standard folder and file names used by NYC tools
 const processWorkingDirectory = process.cwd()
@@ -99,17 +101,20 @@ function maybePrintFinalCoverageFiles(folder) {
     const allCovered = coveredStatements === totalStatements
     const coverageStatus = hasStatements ? (allCovered ? '✅' : '⚠️') : '❓'
 
-    debug(
-      '%s %s statements covered %d/%d',
-      coverageStatus,
-      key,
-      coveredStatements,
-      totalStatements
-    )
+    // debug(
+    //   '%s %s statements covered %d/%d',
+    //   coverageStatus,
+    //   key,
+    //   coveredStatements,
+    //   totalStatements
+    // )
   })
 }
 
 const tasks = {
+  startPreciseCoverage,
+  takePreciseCoverage,
+  stopPreciseCoverage,
   /**
    * Clears accumulated code coverage information.
    *
@@ -140,17 +145,16 @@ const tasks = {
    * with previously collected coverage.
    *
    * @param {string} sentCoverage Stringified coverage object sent by the test runner
-   * @returns {null} Nothing is returned from this task
+   * @returns {any} Updated coverage
    */
   combineCoverage(sentCoverage) {
     const coverage = JSON.parse(sentCoverage)
     debug('parsed sent coverage')
 
     fixSourcePaths(coverage)
-
     const previousCoverage = existsSync(nycFilename)
       ? JSON.parse(readFileSync(nycFilename, 'utf8'))
-      : {}
+      : '{}'
 
     // previous code coverage object might have placeholder entries
     // for files that we have not seen yet,
@@ -161,10 +165,11 @@ const tasks = {
 
     const coverageMap = istanbul.createCoverageMap(previousCoverage)
     coverageMap.merge(coverage)
-    saveCoverage(coverageMap)
+    const result = coverageMap.toJSON()
+    saveCoverage(result)
     debug('wrote coverage file %s', nycFilename)
 
-    return null
+    return JSON.stringify(result)
   },
 
   /**
@@ -228,17 +233,7 @@ const tasks = {
  * Registers code coverage collection and reporting tasks.
  * Sets an environment variable to tell the browser code that it can
  * send the coverage.
- * @example
-  ```
-    // your plugins file
-    module.exports = (on, config) => {
-      require('cypress/code-coverage/task')(on, config)
-      // IMPORTANT to return the config object
-      // with the any changed environment variables
-      return config
-    }
-  ```
-*/
+ */
 function registerCodeCoverageTasks(on, config) {
   on('task', tasks)
 

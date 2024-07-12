@@ -1,6 +1,18 @@
 ## MIT License
 
-Copyright (c) 2019 Cypress.io https://www.cypress.io
+Copyright (c) 2024 Rohit Gohri
+
+Copyright (c) 2020 Gleb Bahmutov
+<https://github.com/bahmutov/cypress-native-chrome-code-coverage-example>
+
+Copyright (c) 2021 Lefty
+<https://github.com/leftyio/v8-cypress-coverage-plugin>
+
+Copyright (c) 2019 Cypress.io <https://www.cypress.io>
+<https://github.com/cypress-io/code-coverage>
+
+Copyright JS Foundation and other contributors
+<https://github.com/webpack-contrib/source-map-loader>
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
