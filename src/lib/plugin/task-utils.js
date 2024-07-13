@@ -170,13 +170,13 @@ function resolveRelativePaths(nycFilename) {
     const coverage = nycCoverage[key]
 
     if (!coverage.path) {
-      delete nycCoverage[key];
+      delete nycCoverage[key]
       debug('key %s does not have path', key)
       return
     }
 
     if (coverage.path.includes('node_modules')) {
-      delete nycCoverage[key];
+      delete nycCoverage[key]
     }
 
     if (!isAbsolute(coverage.path)) {
@@ -215,7 +215,7 @@ function resolveRelativePaths(nycFilename) {
     // }
 
     if (!existsSync(coverage.path) && coverage.path.includes('.next')) {
-      delete nycCoverage[key];
+      delete nycCoverage[key]
     }
   })
 
@@ -428,11 +428,63 @@ function includeAllFiles(nycFilename, nycOptions) {
   }
 }
 
+/**
+ * @see https://stackoverflow.com/a/63523470
+ */
+const webpackSourceMapping = {
+  'webpack:///./*': '${root}/*',
+  'webpack:///src/*': '${root}/*',
+  'webpack:///*': '*',
+  'webpack:///./~/*': '${root}/node_modules/*',
+  'meteor://💻app/*': '${root}/*',
+  'webpack://_N_E/*': '${root}/*'
+}
+
+/**
+ * Replace source-map's path by the corresponding absolute file path
+ * (coverage report wouldn't work with source-map path being relative
+ * or containing Webpack loaders and query parameters)
+ * @param {any} coverage
+ * @param {string | null} projectRoot
+ */
+function fixSourcePaths(coverage, projectRoot = null) {
+  Object.values(coverage).forEach((file) => {
+    let { path: absolutePath, inputSourceMap } = file
+    const fileName = /([^\/\\]+)$/.exec(absolutePath)?.[1]
+
+    if (!inputSourceMap || !fileName) return
+    if (inputSourceMap.sourceRoot) {
+      inputSourceMap.sourceRoot = ''
+    }
+
+    if (projectRoot && absolutePath.includes('/_N_E/')) {
+      console.error(
+        {
+          root: inputSourceMap,
+          fileName,
+          absolutePath
+        },
+        'Source mapping'
+      )
+      const [, relativePath] = absolutePath.split('/_N_E/')
+      absolutePath = `${projectRoot}/${relativePath}`
+    }
+
+    inputSourceMap.sources = inputSourceMap.sources.map((source) => {
+      if (source.includes(fileName)) {
+        return absolutePath
+      }
+      return source
+    })
+  })
+}
+
 module.exports = {
   showNycInfo,
   resolveRelativePaths,
   checkAllPathsNotFound,
   tryFindingLocalFiles,
   readNycOptions,
-  includeAllFiles
+  includeAllFiles,
+  fixSourcePaths
 }
