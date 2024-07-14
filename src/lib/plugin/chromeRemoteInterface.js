@@ -21,7 +21,7 @@ let client = null
  * @param {Cypress.BeforeBrowserLaunchOptions} launchOptions
  * @returns
  */
-function browserLaunchHandler(browser, launchOptions) {
+export function browserLaunchHandler(browser, launchOptions) {
   if (browser.name !== 'chrome') {
     return debug(
       `Warning: An unsupported browser is used, output will not be logged to console: ${browser.name}`
@@ -56,7 +56,7 @@ function browserLaunchHandler(browser, launchOptions) {
   tryConnect()
 }
 
-async function startPreciseCoverage() {
+export async function startPreciseCoverage() {
   if (!client) {
     debug('no chrome client')
     return null
@@ -71,10 +71,10 @@ async function startPreciseCoverage() {
 }
 
 /**
- * @param {{clientRoots?: Record<string, string>}} param0
+ * @param {{comment: string, clientRoots?: Record<string, string>}} param0
  * @returns
  */
-function takePreciseCoverage({ clientRoots } = {}) {
+export function takePreciseCoverage({ comment, clientRoots }) {
   if (!client) {
     debug('no chrome client')
     return null
@@ -82,7 +82,10 @@ function takePreciseCoverage({ clientRoots } = {}) {
 
   return client.Profiler.takePreciseCoverage()
     .then(async (cov) => {
-      const res = await convertProfileCoverageToIstanbul(cov, clientRoots)
+      const res = await convertProfileCoverageToIstanbul(cov, {
+        comment,
+        clientRoots
+      })
       debug('chrome coverage', cov, res)
       return res
     })
@@ -92,17 +95,10 @@ function takePreciseCoverage({ clientRoots } = {}) {
     })
 }
 
-function stopPreciseCoverage() {
+export function stopPreciseCoverage() {
   if (!client) {
     debug('no chrome client')
     return null
   }
   return client.Profiler.stopPreciseCoverage()
-}
-
-module.exports = {
-  browserLaunchHandler,
-  startPreciseCoverage,
-  takePreciseCoverage,
-  stopPreciseCoverage
 }

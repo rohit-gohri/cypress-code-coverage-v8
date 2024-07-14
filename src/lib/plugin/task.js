@@ -2,7 +2,7 @@ const istanbul = require('istanbul-lib-coverage')
 const { join, resolve } = require('path')
 const { existsSync, mkdirSync, readFileSync, writeFileSync } = require('fs')
 const execa = require('execa')
-const _ = require('lodash')
+const { debug, removePlaceholders } = require('../common/common-utils')
 const {
   showNycInfo,
   fixSourcePaths,
@@ -12,7 +12,6 @@ const {
   readNycOptions,
   includeAllFiles
 } = require('./task-utils')
-const { debug, removePlaceholders } = require('../common/common-utils')
 const {
   startPreciseCoverage,
   takePreciseCoverage,
@@ -65,7 +64,6 @@ const nycFilename = join(nycReportOptions['temp-dir'], 'out.json')
 
 // #endregion
 
-let cypressEnv = {}
 function saveCoverage(coverage) {
   if (!existsSync(nycReportOptions.tempDir)) {
     mkdirSync(nycReportOptions.tempDir, { recursive: true })
@@ -245,8 +243,6 @@ function registerCodeCoverageTasks(on, config) {
   // set a variable to let the hooks running in the browser
   // know that they can send coverage commands
   config.env.codeCoverageTasksRegistered = true
-
-  cypressEnv = _.cloneDeep(config.env)
 
   return config
 }

@@ -54,7 +54,12 @@ module.exports = (server) => {
     method: 'GET',
     path: '/__coverage__',
     async handler() {
-      return { coverage: (await takePreciseCoverage()) || null }
+      return {
+        coverage:
+          (await takePreciseCoverage({
+            comment: `hapi - ${process.cwd()}`
+          })) || null
+      }
     }
   })
 }

@@ -1,8 +1,7 @@
 const fs = require('fs/promises')
 const { readFileSync } = require('fs')
 const { fileURLToPath } = require('url')
-const { findSourceMap } = require('module')
-const { debug, cacheDir, exists } = require('./common-utils')
+const { cacheDir, exists } = require('./common-utils')
 const path = require('path')
 
 /**
@@ -95,7 +94,7 @@ const cwd = process.cwd()
  * @param {Record<string, {filePath: string, sources: SourceMap}>} sourceMapCache
  * @returns
  */
-async function getSources(url, clientRoots, sourceMapCache = {}) {
+export async function getSources(url, clientRoots, sourceMapCache = {}) {
   if (sourceMapCache[url]) {
     return sourceMapCache[url]
   }
@@ -199,8 +198,4 @@ async function getSources(url, clientRoots, sourceMapCache = {}) {
 
   sourceMapCache[url] = { filePath, sources }
   return { filePath, sources }
-}
-
-module.exports = {
-  getSources
 }

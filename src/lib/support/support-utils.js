@@ -2,8 +2,23 @@
 // helper functions that are safe to use in the browser
 // from support.js file - no file system access
 
-/** excludes files that shouldn't be in code coverage report */
-const filterFilesFromCoverage = (
+/**
+ * Consistently logs the given string to the Command Log
+ * so the user knows the log message is coming from this plugin.
+ * @param {string} s Message to log.
+ */
+export const logMessage = (s) => {
+  return Cypress.log({
+    name: 'Coverage',
+    message: `${s} \`[cypress-code-coverage-v8]\``
+  })
+}
+
+/**
+ * excludes files that shouldn't be in code coverage report
+ * @param {import('../plugin/chromeRemoteInterface').ClientCoverageResult} totalCoverage
+ */
+export const filterFilesFromCoverage = (
   totalCoverage,
   config = Cypress.config,
   env = Cypress.env,
@@ -14,32 +29,28 @@ const filterFilesFromCoverage = (
   return totalCoverage
 }
 
+/**
+ * @param {import('../plugin/chromeRemoteInterface').ClientCoverageResult} totalCoverage
+ */
 const filterExternalFromCoverage = (totalCoverage) => {
-  return Cypress._.omitBy(
-    totalCoverage,
-    /**
-     * @param {{path: string}} param0
-     * @param {string} filePath
-     */
-    ({ path: absolutePath }, filePath) => {
-      const fileName = /([^\/\\]+)$/.exec(absolutePath)?.[1]
-
-      if (
-        fileName?.startsWith('webpack ') ||
-        absolutePath.includes('/webpack/') ||
-        absolutePath.match(/\/external\s(\w|-)+\s"/)
-      ) {
-        return true
-      }
-
-      return false
+  return Cypress._.omitBy(totalCoverage, (_, filePath) => {
+    const fileName = /([^\/\\]+)$/.exec(filePath)?.[1]
+    if (
+      fileName?.startsWith('webpack ') ||
+      filePath.includes('/webpack/') ||
+      filePath.match(/\/external\s(\w|-)+\s"/)
+    ) {
+      return true
     }
-  )
+
+    return false
+  })
 }
 
 /**
  * remove coverage for the spec files themselves,
  * only keep "external" application source file coverage
+ * @param {import('../plugin/chromeRemoteInterface').ClientCoverageResult} totalCoverage
  */
 const filterSpecsFromCoverage = (
   totalCoverage,
@@ -91,8 +102,4 @@ function getCypressExcludePatterns(config, env, spec) {
   }
 
   return testFilePatterns
-}
-
-module.exports = {
-  filterFilesFromCoverage
 }

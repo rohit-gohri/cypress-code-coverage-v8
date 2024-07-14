@@ -42,7 +42,9 @@ module.exports = async function returnCodeCoverageNext(_req, res) {
   }
 
   const { takePreciseCoverage } = require('../lib/register/v8Interface')
-  const coverage = await takePreciseCoverage()
+  const coverage = await takePreciseCoverage({
+    comment: `nextjs - ${process.cwd()}`
+  })
 
   if (!coverage) {
     // only GET is supported

@@ -17,14 +17,10 @@ const addTasks = require('./lib/plugin/task')
     }
   ```
  */
-const coveragePlugin = (on, config) => {
+export const coveragePlugin = (on, config) => {
   on('before:browser:launch', browserLaunchHandler)
   addTasks(on, config)
   // IMPORTANT to return the config object
   // with the any changed environment variables
   return config
-}
-
-module.exports = {
-  coveragePlugin
 }

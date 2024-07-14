@@ -1,12 +1,32 @@
+const path = require('path')
 const fs = require('fs/promises')
+const slugify = require('slug')
 const libCoverage = require('istanbul-lib-coverage')
 const v8toIstanbul = require('v8-to-istanbul')
 const { getSources } = require('./sourceMap')
-const { debug, exists, cacheDir } = require('./common-utils')
+const { exists, cacheDir } = require('./common-utils')
+
+const debugDir = path.join(__dirname, '..', '..', '..', '.cache', '_debug')
+
+/**
+ * @param {any} payload
+ * @param {string} name
+ */
+async function saveDebugFile(payload, name) {
+  if (!(await exists(debugDir))) {
+    await fs.mkdir(debugDir, { recursive: true })
+  }
+  await fs.writeFile(
+    path.join(debugDir, `${slugify(name)}.json`),
+    typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2)
+  )
+  return null
+}
 
 /**
  * @param {import('devtools-protocol').Protocol.Profiler.TakePreciseCoverageResponse['result'][number]} obj
  * @param {Record<string, string>} clientRoots
+ * @param {any} sourceMapCache
  */
 async function convertToIstanbul(obj, clientRoots, sourceMapCache = {}) {
   let res = await getSources(obj.url, clientRoots, sourceMapCache)
@@ -35,15 +55,19 @@ async function convertToIstanbul(obj, clientRoots, sourceMapCache = {}) {
  * @see https://github.com/bcoe/c8/issues/376
  * @see https://github.com/tapjs/processinfo/blob/33c72e547139630cde35a4126bb4575ad7157065/lib/register-coverage.cjs
  * @param {Omit<import('devtools-protocol').Protocol.Profiler.TakePreciseCoverageResponse, 'timestamp'>} cov
- * @param {Record<string, string>} clientRoots
+ * @param {{clientRoots?: Record<string, string>, comment: string}} param1
  */
-async function convertProfileCoverageToIstanbul(cov, clientRoots = {}) {
+export async function convertProfileCoverageToIstanbul(
+  cov,
+  { comment, clientRoots = {} }
+) {
   // @ts-ignore
   const sourceMapCache = (cov['source-map-cache'] = {})
 
   if (!(await exists(cacheDir))) {
     await fs.mkdir(cacheDir, { recursive: true })
   }
+  await saveDebugFile(cov, comment)
 
   const coverages = await Promise.all(
     cov.result.map(async (obj) => {
@@ -79,8 +103,4 @@ async function convertProfileCoverageToIstanbul(cov, clientRoots = {}) {
   //   await fs.writeFile(filename, JSON.stringify(result, null, 2), 'utf8')
   // }
   return result
-}
-
-module.exports = {
-  convertProfileCoverageToIstanbul
 }

@@ -46,7 +46,10 @@ module.exports = (app) => {
     debug('taking precise coverage')
 
     ctx.body = {
-      coverage: (await takePreciseCoverage()) || null
+      coverage:
+        (await takePreciseCoverage({
+          comment: `koa - ${process.cwd()}`
+        })) || null
     }
   })
 }

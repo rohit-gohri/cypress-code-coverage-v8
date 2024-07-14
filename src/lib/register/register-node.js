@@ -4,7 +4,8 @@
  */
 process.setSourceMapsEnabled(true)
 const inspector = require('inspector')
-const session = new inspector.Session()
+
+export const session = new inspector.Session()
 session.connect()
 session.post('Profiler.enable')
 session.post('Runtime.enable')
@@ -12,7 +13,3 @@ session.post('Profiler.startPreciseCoverage', {
   callCount: true,
   detailed: true
 })
-
-module.exports = {
-  session
-}

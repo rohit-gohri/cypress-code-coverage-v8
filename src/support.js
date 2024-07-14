@@ -1,22 +1,12 @@
 /// <reference types="cypress" />
 const dayjs = require('dayjs')
 const duration = require('dayjs/plugin/duration')
-const { filterFilesFromCoverage } = require('./lib/support/support-utils')
+const {
+  logMessage,
+  filterFilesFromCoverage
+} = require('./lib/support/support-utils')
 
 dayjs.extend(duration)
-
-/**
- * Consistently logs the given string to the Command Log
- * so the user knows the log message is coming from this plugin.
- * @param {string} s Message to log.
- */
-
-const logMessage = (s) => {
-  return Cypress.log({
-    name: 'Coverage',
-    message: `${s} \`[cypress-code-coverage-v8]\``
-  })
-}
 
 /**
  * Sends collected code coverage object to the backend code
@@ -50,6 +40,7 @@ const sendCoverage = (coverage, comment, projectRoot = null) => {
       logInstance.end()
     })
 }
+
 /**
  * @typedef {{
  *  client?: boolean;
@@ -139,12 +130,15 @@ const registerHooks = () => {
     afterEach(function collectClientCoverage() {
       cy.location({ log: false }).then((loc) => {
         const projectRoot = clientRoots[`${loc.protocol}//${loc.host}`]
+        const comment = `client - ${loc.href}`
         logMessage(`Project root found - ${loc.href} - ${projectRoot}`)
 
         // collect and merge frontend coverage
         cy.task(
           'takePreciseCoverage',
           {
+            comment,
+            projectRoot,
             clientRoots
           },
           {
@@ -157,7 +151,7 @@ const registerHooks = () => {
            */
           (clientCoverage) => {
             if (clientCoverage) {
-              sendCoverage(clientCoverage, `client - ${loc.href}`, projectRoot)
+              sendCoverage(clientCoverage, comment, projectRoot)
             } else {
               logMessage(
                 `Could not load client coverage - ${loc.href}. ${clientCoverage}`
@@ -219,11 +213,9 @@ const registerHooks = () => {
           })
           .then((coverage) => {
             if (coverage) {
-              sendCoverage(coverage, `${comment} - ${url}`, projectRoot).then(
-                () => {
-                  resolve()
-                }
-              )
+              sendCoverage(coverage, comment, projectRoot).then(() => {
+                resolve()
+              })
               return
             }
 

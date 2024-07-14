@@ -40,7 +40,10 @@ module.exports = (app) => {
   app.get('/__coverage__', async (req, res, next) => {
     try {
       res.json({
-        coverage: (await takePreciseCoverage()) || null
+        coverage:
+          (await takePreciseCoverage({
+            comment: `express - ${process.cwd()}`
+          })) || null
       })
     } catch (error) {
       return next(error)
