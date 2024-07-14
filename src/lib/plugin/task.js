@@ -114,7 +114,7 @@ function maybePrintFinalCoverageFiles(folder) {
   })
 }
 
-const tasks = {
+const createTasks = (_config) => ({
   startPreciseCoverage,
   takePreciseCoverage,
   stopPreciseCoverage,
@@ -230,7 +230,7 @@ const tasks = {
     }
     return nyc.report().then(returnReportFolder)
   }
-}
+})
 
 /**
  * Registers code coverage collection and reporting tasks.
@@ -238,7 +238,7 @@ const tasks = {
  * send the coverage.
  */
 function registerCodeCoverageTasks(on, config) {
-  on('task', tasks)
+  on('task', createTasks(config))
 
   // set a variable to let the hooks running in the browser
   // know that they can send coverage commands
