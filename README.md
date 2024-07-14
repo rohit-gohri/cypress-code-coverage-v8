@@ -14,7 +14,7 @@ Then add the code below to the `supportFile` and `setupNodeEvents` function.
 
 ```js
 // cypress/support/e2e.js
-import 'cypress-code-coverage-v8/dist/support'
+import 'cypress-code-coverage-v8'
 ```
 
 ```js
@@ -26,7 +26,7 @@ module.exports = defineConfig({
   // the e2e or component configuration
   e2e: {
     setupNodeEvents(on, config) {
-      require('cypress-code-coverage-v8/dist/plugins')(on, config)
+      require('cypress-code-coverage-v8/plugin')(on, config)
       // include any other plugin code...
 
       // It's IMPORTANT to return the config object

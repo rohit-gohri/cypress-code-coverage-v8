@@ -41,7 +41,9 @@
   },
   "homepage": "https://github.com/rohit-gohri/cypress-code-coverage-v8#readme",
   "files": [
-    "dist"
+    "dist",
+    "plugin.js",
+    "register.js"
   ],
   "publishConfig": {
     "access": "public"

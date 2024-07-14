@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "ES2021",
+    "target": "ES2019",
     "checkJs": true,
     "allowJs": true,
     "skipLibCheck": true,
@@ -9,7 +9,7 @@
     "strict": true,
     "noImplicitAny": false,
     "useUnknownInCatchVariables": false,
-    "module": "esnext",
+    "module": "CommonJS",
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
