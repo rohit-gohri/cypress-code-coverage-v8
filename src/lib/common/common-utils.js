@@ -78,7 +78,7 @@ const removePlaceholders = (coverage) => {
   })
 }
 
-module.exports = {
+export {
   debug,
   cacheDir,
   exists,

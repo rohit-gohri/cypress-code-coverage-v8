@@ -1,5 +1,5 @@
 const { browserLaunchHandler } = require('./lib/plugin/chromeRemoteInterface')
-const addTasks = require('./lib/plugin/task')
+const { default: addTasks } = require('./lib/plugin/task')
 
 /**
  * @param {Cypress.PluginEvents} on

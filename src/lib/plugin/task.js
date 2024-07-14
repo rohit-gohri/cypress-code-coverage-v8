@@ -247,4 +247,4 @@ function registerCodeCoverageTasks(on, config) {
   return config
 }
 
-module.exports = registerCodeCoverageTasks
+export default registerCodeCoverageTasks

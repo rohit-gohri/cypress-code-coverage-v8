@@ -8,7 +8,7 @@ const { debug } = require('../lib/common/common-utils')
  * ```ts
  * require('cypress-code-coverage-v8/dist/register');
  * const Hapi = require('@hapi/hapi');
- * const coverageRoutes = require('cypress-code-coverage-v8/dist/middleware/hapi');
+ * const coverageRoutes = require('cypress-code-coverage-v8/middlewares/hapi');
  *
  * const init = async () => {
  *   const server = Hapi.server({
@@ -38,7 +38,7 @@ const { debug } = require('../lib/common/common-utils')
  *
  * @param {import('@hapi/hapi').Server} server
  */
-module.exports = (server) => {
+export default (server) => {
   if (!isCoverageEnabled()) {
     debug('skipping hapi middleware, code coverage is not enabled')
     return

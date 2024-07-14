@@ -2,16 +2,15 @@ const { isCoverageEnabled } = require('../lib/common/isEnabled')
 const { debug } = require('../lib/common/common-utils')
 
 /**
- * for Koa
+ * for Express.js
  *
  * @example Use like
- *
  * ```ts
  * require('cypress-code-coverage-v8/dist/register');
- * const Koa = require('koa')
- * const app = new Koa();
+ * const express = require('express')
+ * const app = express()
  * // @see https://github.com/rohit-gohri/cypress-code-coverage-v8
- * require('cypress-code-coverage-v8/dist/middleware/koa')(app)
+ * require('cypress-code-coverage-v8/middlewares/express')(app)
  * ```
  *
  * Then add to your cypress.json an environment variable pointing at the API
@@ -20,36 +19,34 @@ const { debug } = require('../lib/common/common-utils')
  *   "baseUrl": "http://localhost:3000",
  *   "env": {
  *     "codeCoverage": {
- *       "api": "http://localhost:4000/api/__coverage__"
+ *       "api": "http://localhost:4000/__coverage__"
  *     }
  *   }
  * }
  * ```
  *
- * @param {import('koa')} app
+ * @param {import('express').Application} app
  */
-module.exports = (app) => {
+export default (app) => {
   if (!isCoverageEnabled()) {
-    debug('skipping koa middleware, code coverage is not enabled')
+    debug('skipping express middleware, code coverage is not enabled')
     return
   }
-  debug('adding koa middleware, code coverage is enabled')
 
   const { takePreciseCoverage } = require('../lib/register/v8Interface')
+
   // expose "GET __coverage__" endpoint that just returns
   // global coverage information (if the application has been instrumented)
-  app.use(async (ctx, next) => {
-    if (ctx.path !== '/__coverage__' && ctx.method !== 'GET') {
-      return next()
-    }
-
-    debug('taking precise coverage')
-
-    ctx.body = {
-      coverage:
-        (await takePreciseCoverage({
-          comment: `koa - ${process.cwd()}`
-        })) || null
+  app.get('/__coverage__', async (req, res, next) => {
+    try {
+      res.json({
+        coverage:
+          (await takePreciseCoverage({
+            comment: `express - ${process.cwd()}`
+          })) || null
+      })
+    } catch (error) {
+      return next(error)
     }
   })
 }

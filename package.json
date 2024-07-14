@@ -39,13 +39,38 @@
       "node": "./dist/register.js",
       "require": "./dist/register.js"
     },
+    "./middlewares/express": {
+      "types": "./dist/middlewares/express.d.ts",
+      "browser": "./dist/middlewares/express.js",
+      "node": "./dist/middlewares/express.js",
+      "require": "./dist/middlewares/express.js"
+    },
+    "./middlewares/koa": {
+      "types": "./dist/middlewares/koa.d.ts",
+      "browser": "./dist/middlewares/koa.js",
+      "node": "./dist/middlewares/koa.js",
+      "require": "./dist/middlewares/koa.js"
+    },
+    "./middlewares/hapi": {
+      "types": "./dist/middlewares/hapi.d.ts",
+      "browser": "./dist/middlewares/hapi.js",
+      "node": "./dist/middlewares/hapi.js",
+      "require": "./dist/middlewares/hapi.js"
+    },
+    "./middlewares/nextjs": {
+      "types": "./dist/middlewares/nextjs.d.ts",
+      "browser": "./dist/middlewares/nextjs.js",
+      "node": "./dist/middlewares/nextjs.js",
+      "require": "./dist/middlewares/nextjs.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
     "dist",
     "src",
     "plugin",
-    "register"
+    "register",
+    "middlewares"
   ],
   "peerDependencies": {
     "cypress": ">=10"
@@ -82,7 +107,7 @@
     "istanbul-lib-coverage": "^3.2.2",
     "js-yaml": "4.1.0",
     "nyc": "15.1.0",
-    "slug": "^9.1.0",
+    "slug": "5.1.0",
     "v8-to-istanbul": "^9.2.0"
   },
   "devDependencies": {

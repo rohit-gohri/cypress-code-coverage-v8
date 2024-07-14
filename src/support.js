@@ -46,7 +46,7 @@ const sendCoverage = (coverage, comment, projectRoot = null) => {
  *  client?: boolean;
  *  clientRoots?: Record<string, string>;
  *  ssr?: string;
- *  urls?: string[] | string;
+ *  api?: string[] | string;
  *  expectBackendCoverageOnly?: boolean;
  * }} CodeCoverageConfig
  */
@@ -188,7 +188,7 @@ const registerHooks = () => {
       return
     }
 
-    const backendUrls = Cypress._.castArray(codeCoverageConfig.urls ?? [])
+    const backendUrls = Cypress._.castArray(codeCoverageConfig.api ?? [])
 
     /** @type {CoverageHostConfig[]} */
     const finalHostConfigs = [

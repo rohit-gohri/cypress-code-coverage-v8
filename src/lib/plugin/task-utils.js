@@ -481,7 +481,7 @@ function fixSourcePaths(coverage, projectRoot = null) {
   })
 }
 
-module.exports = {
+export {
   showNycInfo,
   resolveRelativePaths,
   checkAllPathsNotFound,

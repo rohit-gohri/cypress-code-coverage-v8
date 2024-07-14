@@ -11,7 +11,7 @@ if (isCoverageEnabled()) {
  *
  * @example in your pages/api/__coverage__.js
  * ```ts
- * import coverageHandler from 'cypress-code-coverage-v8/dist/middleware/nextjs';
+ * import coverageHandler from 'cypress-code-coverage-v8/middlewares/nextjs';
  * export default coverageHandler;
  * ```
  *
@@ -33,7 +33,7 @@ if (isCoverageEnabled()) {
  * @param {import('next').NextApiRequest} _req
  * @param {import('next').NextApiResponse} res
  */
-module.exports = async function returnCodeCoverageNext(_req, res) {
+export default async function returnCodeCoverageNext(_req, res) {
   if (!isCoverageEnabled()) {
     res.status(200).json({
       coverage: null
