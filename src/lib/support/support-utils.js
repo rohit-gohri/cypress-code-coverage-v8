@@ -15,21 +15,26 @@ const filterFilesFromCoverage = (
 }
 
 const filterExternalFromCoverage = (totalCoverage) => {
-  return Cypress._.omitBy(totalCoverage, ({ path: absolutePath }, filePath) => {
-    const fileName = /([^\/\\]+)$/.exec(absolutePath)?.[1]
-    console.error(
-      {
-        filePath,
-        fileName,
-        absolutePath
-      },
-      'error'
-    )
-    if (fileName?.startsWith('external ') || fileName?.startsWith('webpack ')) {
-      return true
+  return Cypress._.omitBy(
+    totalCoverage,
+    /**
+     * @param {{path: string}} param0
+     * @param {string} filePath
+     */
+    ({ path: absolutePath }, filePath) => {
+      const fileName = /([^\/\\]+)$/.exec(absolutePath)?.[1]
+
+      if (
+        fileName?.startsWith('webpack ') ||
+        absolutePath.includes('/webpack/') ||
+        absolutePath.match(/\/external\s(\w|-)+\s"/)
+      ) {
+        return true
+      }
+
+      return false
     }
-    return false
-  })
+  )
 }
 
 /**

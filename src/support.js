@@ -50,14 +50,28 @@ const sendCoverage = (coverage, comment, projectRoot = null) => {
       logInstance.end()
     })
 }
+/**
+ * @typedef {{
+ *  client?: boolean;
+ *  clientRoots?: Record<string, string>;
+ *  ssr?: string;
+ *  urls?: string[] | string;
+ *  expectBackendCoverageOnly?: boolean;
+ * }} CodeCoverageConfig
+ */
+
+/**
+ * @typedef {{url: string, comment: string, projectRoot: string | null}} CoverageHostConfig
+ */
 
 const registerHooks = () => {
-  const codeCoverageConfig = Cypress.env('codeCoverage')
+  /** @type {CodeCoverageConfig} */
+  const codeCoverageConfig = Cypress.env('codeCoverage') || {}
+  const clientRoots = codeCoverageConfig.clientRoots || {}
   const clientCoverageEnabled =
-    String(Cypress._.get(codeCoverageConfig, 'client', false)) !== 'false'
-  /**
-   * @type {{url: string, comment: string, projectRoot: string | null}[]}
-   */
+    String(codeCoverageConfig.client ?? false) !== 'false'
+
+  /** @type {CoverageHostConfig[]} */
   let hostObjects = []
 
   before(() => {
@@ -82,8 +96,7 @@ const registerHooks = () => {
       })
     }
 
-    const ssrCoveragePath = Cypress._.get(codeCoverageConfig, 'ssr')
-
+    const ssrCoveragePath = codeCoverageConfig.ssr
     if (!ssrCoveragePath) {
       return
     }
@@ -104,13 +117,13 @@ const registerHooks = () => {
         return
       }
 
+      const projectRoot =
+        clientRoots[`${win.location.protocol}//${win.location.host}`] ?? null
+
       logMessage(`Saved "${url}" for SSR coverage`)
       hostObjects.push({
         url,
-        projectRoot:
-          Cypress._.get(Cypress.env(), `codeCoverage.clientRoots`, {})[
-            `${win.location.protocol}//${win.location.host}`
-          ] ?? null,
+        projectRoot,
         comment: `ssr - ${win.location.host}`
       })
     }
@@ -124,38 +137,35 @@ const registerHooks = () => {
 
   if (clientCoverageEnabled) {
     afterEach(function collectClientCoverage() {
-      // collect and merge frontend coverage
-      cy.task(
-        'takePreciseCoverage',
-        {},
-        {
-          timeout: dayjs.duration(30, 'seconds').asMilliseconds(),
-          log: false
-        }
-      ).then(
-        /**
-         * @param {any} clientCoverage
-         */
-        (clientCoverage) => {
-          cy.location({ log: false }).then((loc) => {
+      cy.location({ log: false }).then((loc) => {
+        const projectRoot = clientRoots[`${loc.protocol}//${loc.host}`]
+        logMessage(`Project root found - ${loc.href} - ${projectRoot}`)
+
+        // collect and merge frontend coverage
+        cy.task(
+          'takePreciseCoverage',
+          {
+            clientRoots
+          },
+          {
+            timeout: dayjs.duration(30, 'seconds').asMilliseconds(),
+            log: false
+          }
+        ).then(
+          /**
+           * @param {any} clientCoverage
+           */
+          (clientCoverage) => {
             if (clientCoverage) {
-              const projectRoot = Cypress._.get(
-                Cypress.env(),
-                `codeCoverage.clientRoots`,
-                {}
-              )[`${loc.protocol}//${loc.host}`]
-
-              logMessage(`Project root found - ${loc.href} - ${projectRoot}`)
-
               sendCoverage(clientCoverage, `client - ${loc.href}`, projectRoot)
             } else {
               logMessage(
                 `Could not load client coverage - ${loc.href}. ${clientCoverage}`
               )
             }
-          })
-        }
-      )
+          }
+        )
+      })
     })
 
     after(() => {
@@ -184,26 +194,20 @@ const registerHooks = () => {
       return
     }
 
-    const backendUrls = Cypress._.castArray(
-      Cypress._.get(codeCoverageConfig, 'urls', [])
-    )
+    const backendUrls = Cypress._.castArray(codeCoverageConfig.urls ?? [])
 
-    /**
-     * @type {{comment: string, url: string, projectRoot: string | null}[]}
-     */
-    const finalUrls = [
-      ...(backendUrls.length
-        ? backendUrls.map((url) => ({
-            url,
-            projectRoot: null,
-            comment: `backend - ${url}`
-          }))
-        : []),
+    /** @type {CoverageHostConfig[]} */
+    const finalHostConfigs = [
+      ...backendUrls.map((url) => ({
+        url,
+        projectRoot: null,
+        comment: `backend - ${url}`
+      })),
       ...hostObjects
     ].filter(Boolean)
 
-    await Cypress.Promise.mapSeries(finalUrls, (scrap) => {
-      const { url, comment, projectRoot } = scrap
+    await Cypress.Promise.mapSeries(finalHostConfigs, (hostConfig) => {
+      const { url, comment, projectRoot } = hostConfig
       return new Cypress.Promise((resolve, reject) => {
         cy.request({
           url,
@@ -229,6 +233,7 @@ const registerHooks = () => {
               'expectBackendCoverageOnly',
               false
             )
+
             if (expectBackendCoverageOnly) {
               reject(
                 new Error(

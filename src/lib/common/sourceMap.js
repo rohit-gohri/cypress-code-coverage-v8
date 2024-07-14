@@ -91,10 +91,11 @@ const cwd = process.cwd()
 
 /**
  * @param {string} url
+ * @param {Record<string, string>} clientRoots
  * @param {Record<string, {filePath: string, sources: SourceMap}>} sourceMapCache
  * @returns
  */
-async function getSources(url, sourceMapCache = {}) {
+async function getSources(url, clientRoots, sourceMapCache = {}) {
   if (sourceMapCache[url]) {
     return sourceMapCache[url]
   }
@@ -118,26 +119,38 @@ async function getSources(url, sourceMapCache = {}) {
   } else if (/^https?:/.test(url)) {
     code = await (await fetch(url)).text()
     const parsedUrl = new URL(url)
+    const clientRoot = clientRoots[`${parsedUrl.protocol}//${parsedUrl.host}`]
 
-    filePath = path.resolve(
-      path.join(cacheDir, parsedUrl.hostname, parsedUrl.pathname)
-    )
-    if (!(await exists(path.dirname(filePath)))) {
-      await fs.mkdir(path.dirname(filePath), { recursive: true })
+    let pathname = parsedUrl.pathname
+    if (pathname.startsWith('/_next/static/chunks')) {
+      pathname = pathname.slice('/_next/static/chunks'.length)
     }
-    await fs.writeFile(filePath, code)
 
-    let { sourceMappingURL } = getSourceMappingURL(code)
-    if (!sourceMappingURL) {
-      return
-    }
-    if (!sourceMappingURL.startsWith('http')) {
-      sourceMappingURL = new URL(sourceMappingURL, parsedUrl).href
-    }
-    const sourceMapString = await (await fetch(sourceMappingURL)).text()
-    sourceMap = JSON.parse(sourceMapString)
+    const fileInProject = path.join(projectDir, pathname)
+    const fileInClient = clientRoot ? path.join(clientRoot, pathname) : null
+    if (fileInProject && (await exists(path.dirname(fileInProject)))) {
+      filePath = fileInProject
+    } else if (fileInClient && (await exists(path.dirname(fileInClient)))) {
+      filePath = fileInClient
+    } else {
+      filePath = path.resolve(path.join(cacheDir, parsedUrl.hostname, pathname))
+      if (!(await exists(path.dirname(filePath)))) {
+        await fs.mkdir(path.dirname(filePath), { recursive: true })
+      }
+      await fs.writeFile(filePath, code)
 
-    await fs.writeFile(`${filePath}.map`, sourceMapString)
+      let { sourceMappingURL } = getSourceMappingURL(code)
+      if (!sourceMappingURL) {
+        return
+      }
+      if (!sourceMappingURL.startsWith('http')) {
+        sourceMappingURL = new URL(sourceMappingURL, parsedUrl).href
+      }
+      const sourceMapString = await (await fetch(sourceMappingURL)).text()
+      sourceMap = JSON.parse(sourceMapString)
+
+      await fs.writeFile(`${filePath}.map`, sourceMapString)
+    }
   } else {
     return undefined
   }

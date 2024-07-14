@@ -457,17 +457,19 @@ function fixSourcePaths(coverage, projectRoot = null) {
       inputSourceMap.sourceRoot = ''
     }
 
-    if (projectRoot && absolutePath.includes('/_N_E/')) {
+    if (absolutePath.includes('/_N_E/')) {
+      const [, relativePath] = absolutePath.split('/_N_E/')
       console.error(
         {
           root: inputSourceMap,
           fileName,
-          absolutePath
+          absolutePath,
+          projectRoot,
+          relativePath
         },
         'Source mapping'
       )
-      const [, relativePath] = absolutePath.split('/_N_E/')
-      absolutePath = `${projectRoot}/${relativePath}`
+      // absolutePath = `${projectRoot}/${relativePath}`
     }
 
     inputSourceMap.sources = inputSourceMap.sources.map((source) => {
