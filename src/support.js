@@ -63,12 +63,12 @@ const registerHooks = () => {
     String(codeCoverageConfig.client ?? false) !== 'false'
 
   /** @type {CoverageHostConfig[]} */
-  let hostObjects = []
+  let ssrHostConfigs = []
 
   before(() => {
     // each object will have the url pathname
     // to let the user know the coverage will be collected
-    hostObjects = []
+    ssrHostConfigs = []
     // we need to reset the coverage when running
     // in the interactive mode, otherwise the counters will
     // keep increasing every time we rerun the tests
@@ -101,10 +101,7 @@ const registerHooks = () => {
         return
       }
       const url = `${win.location.protocol}//${win.location.host}${ssrCoveragePath}`
-      const existingHost = Cypress._.find(hostObjects, {
-        url
-      })
-      if (existingHost) {
+      if (ssrHostConfigs.some((el) => el.url === url)) {
         return
       }
 
@@ -112,7 +109,7 @@ const registerHooks = () => {
         clientRoots[`${win.location.protocol}//${win.location.host}`] ?? null
 
       logMessage(`Saved "${url}" for SSR coverage`)
-      hostObjects.push({
+      ssrHostConfigs.push({
         url,
         projectRoot,
         comment: `ssr - ${win.location.host}`
@@ -197,11 +194,12 @@ const registerHooks = () => {
         projectRoot: null,
         comment: `backend - ${url}`
       })),
-      ...hostObjects
-    ].filter(Boolean)
+      ...ssrHostConfigs
+    ]
 
     await Cypress.Promise.mapSeries(finalHostConfigs, (hostConfig) => {
       const { url, comment, projectRoot } = hostConfig
+
       return new Cypress.Promise((resolve, reject) => {
         cy.request({
           url,
@@ -226,7 +224,7 @@ const registerHooks = () => {
               false
             )
 
-            if (expectBackendCoverageOnly) {
+            if (expectBackendCoverageOnly && comment.startsWith('backend')) {
               reject(
                 new Error(
                   `Expected to collect backend code coverage from ${url}`

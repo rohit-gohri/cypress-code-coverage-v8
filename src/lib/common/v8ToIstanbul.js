@@ -63,27 +63,34 @@ export async function convertProfileCoverageToIstanbul(
 ) {
   // @ts-ignore
   const sourceMapCache = (cov['source-map-cache'] = {})
-
   if (!(await exists(cacheDir))) {
     await fs.mkdir(cacheDir, { recursive: true })
   }
-  await saveDebugFile(cov, comment)
 
-  const coverages = await Promise.all(
-    cov.result.map(async (obj) => {
+  const filteredCoverage = {
+    ...cov,
+    result: cov.result.filter((obj) => {
       if (!/^file:/.test(obj.url) && !/^https?:/.test(obj.url)) {
-        return null
+        return false
       }
+
       if (
         obj.url.includes('/node_modules/') ||
         obj.url.includes('/__cypress/') ||
         obj.url.includes('/__/assets/')
       ) {
-        return null
+        return false
       }
+
+      return true
+    })
+  }
+
+  const coverages = await Promise.all(
+    filteredCoverage.result.map((obj) => {
       return convertToIstanbul(obj, clientRoots, sourceMapCache).catch(
         (err) => {
-          console.error(err, `could not convert to istanbul - ${obj.url}`)
+          console.error(err, `Could not convert to istanbul - ${obj.url}`)
           return null
         }
       )
@@ -99,8 +106,13 @@ export async function convertProfileCoverageToIstanbul(
   }, null)
 
   const result = map.toJSON()
-  // if (filename) {
-  //   await fs.writeFile(filename, JSON.stringify(result, null, 2), 'utf8')
-  // }
+
+  await saveDebugFile(
+    {
+      coverage: filteredCoverage,
+      result
+    },
+    comment
+  )
   return result
 }
