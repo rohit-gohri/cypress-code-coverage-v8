@@ -1,21 +1,24 @@
-// @ts-check
 const istanbul = require('istanbul-lib-coverage')
 const { join, resolve } = require('path')
 const { existsSync, mkdirSync, readFileSync, writeFileSync } = require('fs')
 const execa = require('execa')
+const { debug, removePlaceholders } = require('../common/common-utils')
 const {
   showNycInfo,
+  fixSourcePaths,
   resolveRelativePaths,
   checkAllPathsNotFound,
   tryFindingLocalFiles,
   readNycOptions,
   includeAllFiles
 } = require('./task-utils')
-const { fixSourcePaths } = require('./support-utils')
-const { removePlaceholders } = require('./common-utils')
+const {
+  startPreciseCoverage,
+  takePreciseCoverage,
+  stopPreciseCoverage
+} = require('./chromeRemoteInterface')
 
-const debug = require('debug')('code-coverage')
-
+// #region nyc options
 // these are standard folder and file names used by NYC tools
 const processWorkingDirectory = process.cwd()
 
@@ -59,6 +62,8 @@ const nycReportOptions = (function getNycOption() {
 
 const nycFilename = join(nycReportOptions['temp-dir'], 'out.json')
 
+// #endregion
+
 function saveCoverage(coverage) {
   if (!existsSync(nycReportOptions.tempDir)) {
     mkdirSync(nycReportOptions.tempDir, { recursive: true })
@@ -99,17 +104,20 @@ function maybePrintFinalCoverageFiles(folder) {
     const allCovered = coveredStatements === totalStatements
     const coverageStatus = hasStatements ? (allCovered ? '✅' : '⚠️') : '❓'
 
-    debug(
-      '%s %s statements covered %d/%d',
-      coverageStatus,
-      key,
-      coveredStatements,
-      totalStatements
-    )
+    // debug(
+    //   '%s %s statements covered %d/%d',
+    //   coverageStatus,
+    //   key,
+    //   coveredStatements,
+    //   totalStatements
+    // )
   })
 }
 
-const tasks = {
+const createTasks = (_config) => ({
+  startPreciseCoverage,
+  takePreciseCoverage,
+  stopPreciseCoverage,
   /**
    * Clears accumulated code coverage information.
    *
@@ -139,18 +147,17 @@ const tasks = {
    * Combines coverage information from single test
    * with previously collected coverage.
    *
-   * @param {string} sentCoverage Stringified coverage object sent by the test runner
-   * @returns {null} Nothing is returned from this task
+   * @param {string} payload Stringified coverage object sent by the test runner
+   * @returns {any} Updated coverage
    */
-  combineCoverage(sentCoverage) {
-    const coverage = JSON.parse(sentCoverage)
+  combineCoverage(payload) {
+    const { coverage, projectRoot } = JSON.parse(payload)
     debug('parsed sent coverage')
 
-    fixSourcePaths(coverage)
-
+    fixSourcePaths(coverage, projectRoot)
     const previousCoverage = existsSync(nycFilename)
       ? JSON.parse(readFileSync(nycFilename, 'utf8'))
-      : {}
+      : '{}'
 
     // previous code coverage object might have placeholder entries
     // for files that we have not seen yet,
@@ -161,10 +168,11 @@ const tasks = {
 
     const coverageMap = istanbul.createCoverageMap(previousCoverage)
     coverageMap.merge(coverage)
-    saveCoverage(coverageMap)
+    const result = coverageMap.toJSON()
+    saveCoverage(result)
     debug('wrote coverage file %s', nycFilename)
 
-    return null
+    return JSON.stringify(result)
   },
 
   /**
@@ -222,25 +230,15 @@ const tasks = {
     }
     return nyc.report().then(returnReportFolder)
   }
-}
+})
 
 /**
  * Registers code coverage collection and reporting tasks.
  * Sets an environment variable to tell the browser code that it can
  * send the coverage.
- * @example
-  ```
-    // your plugins file
-    module.exports = (on, config) => {
-      require('cypress/code-coverage/task')(on, config)
-      // IMPORTANT to return the config object
-      // with the any changed environment variables
-      return config
-    }
-  ```
-*/
+ */
 function registerCodeCoverageTasks(on, config) {
-  on('task', tasks)
+  on('task', createTasks(config))
 
   // set a variable to let the hooks running in the browser
   // know that they can send coverage commands
@@ -249,4 +247,4 @@ function registerCodeCoverageTasks(on, config) {
   return config
 }
 
-module.exports = registerCodeCoverageTasks
+export default registerCodeCoverageTasks
